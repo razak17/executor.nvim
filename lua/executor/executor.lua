@@ -105,7 +105,7 @@ M.trigger_set_command_input = function(initial_input_value, callback_fn)
       },
     },
     win_options = {
-      winhighlight = "Normal:Normal,FloatBorder:FloatBorder",
+      winhighlight = "NormalFloat:NormalFloat,FloatBorder:FloatBorder",
     },
   }, {
     prompt = "> ",
@@ -209,7 +209,7 @@ M._make_popup = function(title, lines)
       readonly = false,
     },
     win_options = {
-      winhighlight = "Normal:Normal,FloatBorder:FloatBorder",
+      winhighlight = "NormalFloat:NormalFloat,FloatBorder:FloatBorder",
     },
   })
 

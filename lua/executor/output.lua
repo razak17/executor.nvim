@@ -119,7 +119,7 @@ M.preset_menu = function(preset_commands_by_directory, callback_after_choice)
       },
     },
     win_options = {
-      winhighlight = "Normal:Normal,FloatBorder:Normal",
+      winhighlight = "NormalFloat:NormalFloat,FloatBorder:Normal",
     },
   }, {
     lines = found_options,
@@ -163,7 +163,7 @@ M.history_menu = function(command_history, callback_after_choice)
       },
     },
     win_options = {
-      winhighlight = "Normal:Normal,FloatBorder:Normal",
+      winhighlight = "NormalFloat:NormalFloat,FloatBorder:Normal",
     },
   }, {
     lines = menu_items,
