@@ -175,7 +175,7 @@ M._make_popup = function(title, lines)
       readonly = false,
     },
     win_options = {
-      winhighlight = "Normal:Normal,FloatBorder:FloatBorder",
+      winhighlight = "NormalFloat:NormalFloat,FloatBorder:FloatBorder",
     },
   })
 
