@@ -64,7 +64,7 @@ M._settings = {
         right = 3,
       },
       style = "rounded",
-    }
+    },
   },
   preset_commands = {},
   output_filter = function(command, lines)
@@ -315,7 +315,7 @@ M._show_notification = function(text, timeout)
   end
 end
 
-M.run_task = function()
+M.run_task = function(one_off_command)
   if M._popup ~= nil then
     M._popup:unmount()
     M._popup = nil
@@ -328,7 +328,8 @@ M.run_task = function()
     vim.api.nvim_chan_send(channel_id, "")
   end
 
-  if M._stored_task_command == nil then
+  local cmd = one_off_command or M._stored_task_command
+  if cmd == nil then
     return
   end
 
@@ -339,7 +340,7 @@ M.run_task = function()
   -- Force the statusline to redraw.
   vim.api.nvim_exec([[let &stl=&stl]], false)
 
-  vim.fn.jobstart(M._stored_task_command, {
+  vim.fn.jobstart(cmd, {
     -- pty means that stderr is ignored, and all output goes to stdout, so
     -- that's why stderr is ignored here.
     pty = true,
@@ -385,6 +386,11 @@ M._show_split = function()
 end
 
 M.toggle_detail = function()
+  -- Don't attempt to show detail if no tests have been run.
+  if M._state.last_stdout == nil then
+    Output.write_data(nil, nil, nil, nil)
+    return
+  end
   if M._state.showing_detail == true then
     -- Need to ensure that we definitely are still showing the detail
     -- If the user has `:q` on the detail view, we might have the flag set to `true` but it actually have gone.
@@ -426,7 +432,11 @@ M.hide_detail = function()
   end
 end
 
-M.run = function()
+M.run = function(one_off_command)
+  if one_off_command ~= nil then
+    M.run_task(one_off_command)
+    return
+  end
   if M._stored_task_command == nil then
     M.trigger_set_command_input("", function()
       M.run_task()
