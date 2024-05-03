@@ -22,7 +22,18 @@ Public.setup = function(config)
 end
 
 Public.statusline = function()
-  return Output.statusline_output(Executor._state)
+  return Output.statusline_output(Executor._state, Executor._settings.statusline)
+end
+
+Public.last_command = function()
+  return {
+    cmd = Executor._state.last_command,
+    one_off = Executor._state.last_command_was_one_off,
+  }
+end
+
+Public.current_status = function()
+  return Executor.current_status()
 end
 
 Public.commands = {
@@ -52,6 +63,9 @@ Public.commands = {
   end,
   show_presets = function()
     Output.preset_menu(Executor._settings.preset_commands, function(chosen_option)
+      if chosen_option == nil then
+        return
+      end
       if string.find(chosen_option, "[partial] ", 1, true) then
         local partial_command = chosen_option:gsub("%[partial%] ", ""):gsub("^%s*(.-)%s*$", "%1")
         Executor.trigger_set_command_input(partial_command, function()
@@ -65,6 +79,9 @@ Public.commands = {
   end,
   show_history = function()
     Output.history_menu(Executor._state.command_history, function(chosen_option)
+      if chosen_option == nil then
+        return
+      end
       Executor.set_task_command(chosen_option)
       Executor.run()
     end)

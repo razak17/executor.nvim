@@ -1,4 +1,4 @@
-*executor.txt*          For NVIM v0.8.0          Last change: 2023 November 25
+*executor.txt*            For NVIM v0.8.0           Last change: 2024 April 29
 
 ==============================================================================
 Table of Contents                                 *executor-table-of-contents*
@@ -40,6 +40,20 @@ INSTALLATION                             *executor-executor.nvim-installation*
 
 Install via your favourite plugin manager. **You also need to install
 nui.nvim** as this plugin depends on it.
+
+For example, if you use Lazy.nvim you will want something like:
+
+>lua
+    {
+      "google/executor.nvim",
+      dependencies = {
+        "MunifTanjim/nui.nvim",
+      },
+      config = function()
+        -- your setup here
+      end,
+    },
+<
 
 And then call the `setup` method:
 
@@ -111,17 +125,17 @@ These options are all available via the Lua API also:
 >lua
     local executor = require("executor")
     
-    exector.commands.reset()
-    exector.commands.swap_to_split()
-    exector.commands.swap_to_popup()
-    exector.commands.show_detail()
-    exector.commands.hide_detail()
-    exector.commands.toggle_detail()
-    exector.commands.set_command()
-    exector.commands.run()
-    exector.commands.show_presets()
-    exector.commands.show_history()
-    exector.commands.run_one_off(cmd)
+    executor.commands.reset()
+    executor.commands.swap_to_split()
+    executor.commands.swap_to_popup()
+    executor.commands.show_detail()
+    executor.commands.hide_detail()
+    executor.commands.toggle_detail()
+    executor.commands.set_command()
+    executor.commands.run()
+    executor.commands.show_presets()
+    executor.commands.show_history()
+    executor.commands.run_one_off(cmd)
 <
 
 You can therefore map the Vim commands to a key:
@@ -153,21 +167,6 @@ the default options.
      -- Set this to `false` to use a popup.
      use_split = true,
     
-      -- Configure the width of the input prompt when setting a command.
-      input = {
-        width = math.floor(vim.o.columns * 4/5),
-        -- Border styles
-       border = {
-          style = "rounded",
-          padding = {
-            top = 1,
-            bottom = 1,
-            left = 2,
-            right = 2,
-          },
-       },
-      },
-    
      -- Configure the split. These are ignored if you are using a popup.
      split = {
        -- One of "top", "right", "bottom" or "left"
@@ -196,7 +195,6 @@ the default options.
        },
      },
      -- Filter output from commands. See *filtering_output* below for more
-     details.
      output_filter = function(command, lines)
        return lines
      end,
@@ -216,9 +214,21 @@ the default options.
           },
           style = "rounded",
        },
+     },
+     statusline = {
+       prefix = "Executor: "
+        icons = {
+          in_progress = "…",
+          failed = "✖ ",
+          passed = "✓",
+        },
      }
     })
 <
+
+If you want to customise the input UI or select UI, these use `vim.ui.input`
+and `vim.ui.select`, so you should find your favourite plugin that overrides
+those.
 
 
 STATUS LINE                               *executor-executor.nvim-status-line*
@@ -226,6 +236,16 @@ STATUS LINE                               *executor-executor.nvim-status-line*
 Executor will pop up when a task succeeds or fails, but you can also include it
 in your status line. Use `require('executor').statusline()` to generate the
 output.
+
+If you want more control and to build a custom experience, you can call
+`require('executor').current_status()`. This will return a string containing
+either `NEVER_RUN`, `IN_PROGRESS`, `FAILED` or `PASSED`. You can then use this
+to customise and output a dynamic statusbar as you wish.
+
+You can also call `require('executor).last_command()` which returns a table
+with two fields: `cmd`, which is the last command that was run, and `one_off`,
+which is a boolean indicating if the last command you executed was a one off
+command (via `:ExecutorOneOff`).
 
 
 FILTERING OUTPUT                     *executor-executor.nvim-filtering-output*

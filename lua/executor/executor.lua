@@ -15,7 +15,6 @@ limitations under the License.
 
 local Popup = require("nui.popup")
 local Split = require("nui.split")
-local Input = require("nui.input")
 local event = require("nui.utils.autocmd").event
 
 local Output = require("executor.output")
@@ -37,18 +36,6 @@ end
 
 M._settings = {
   use_split = true,
-  input = {
-    width = math.floor(vim.o.columns * 4 / 5),
-    border = {
-      style = "rounded",
-      padding = {
-        top = 1,
-        bottom = 1,
-        left = 2,
-        right = 2,
-      },
-    },
-  },
   split = {
     position = "right",
     size = SPLIT_WIDTH,
@@ -83,6 +70,14 @@ M._settings = {
       style = "rounded",
     },
   },
+  statusline = {
+    prefix = "Executor: ",
+    icons = {
+      in_progress = "…",
+      failed = "✖ ",
+      passed = "✓",
+    },
+  },
 }
 
 M.configure = function(config)
@@ -90,48 +85,12 @@ M.configure = function(config)
 end
 
 M.trigger_set_command_input = function(initial_input_value, callback_fn)
-  local input_component = Input({
-    relative = "editor",
-    position = "50%",
-    size = {
-      width = M._settings.input.width,
-    },
-    border = {
-      style = M._settings.input.border.style,
-      padding = M._settings.input.border.padding,
-      text = {
-        top = "Executor.nvim: enter a command to run",
-        top_align = "center",
-      },
-    },
-    win_options = {
-      winhighlight = "NormalFloat:NormalFloat,FloatBorder:FloatBorder",
-    },
-  }, {
-    prompt = "> ",
-    default_value = initial_input_value or "",
-    on_submit = function(value)
-      M.set_task_command(value)
-      callback_fn()
-    end,
-    on_close = function()
-      -- Nothing to do here.
-    end,
-  })
-
-  -- Make <ESC> close the input
-  input_component:map("n", "<Esc>", function()
-    input_component:unmount()
-  end, { noremap = true })
-
-  -- Make q close the input.
-  input_component:map("n", "q", function()
-    input_component:unmount()
-  end, { noremap = true })
-
-  input_component:mount()
-  input_component:on(event.BufLeave, function()
-    input_component:unmount()
+  vim.ui.input({
+    prompt = "[Executor.nvim] enter a command to run: ",
+    default = initial_input_value or "",
+  }, function(choice)
+    M.set_task_command(choice)
+    callback_fn()
   end)
 end
 
@@ -140,6 +99,10 @@ M._state = {
   running = false,
   last_stdout = nil,
   last_exit_code = nil,
+  -- Updated with the last command that was run. This will be
+  -- updated for one_off tasks
+  last_command = nil,
+  last_command_was_one_off = false,
   showing_detail = false,
   notification_timer = nil,
   command_history = {},
@@ -148,7 +111,10 @@ M._state = {
 M.reset = function()
   M._state.last_exit_code = nil
   M._state.last_stdout = nil
+  M._state.running = false
   M._stored_task_command = nil
+  M._state.last_command_was_one_off = false
+  M._state.last_command = nil
 end
 
 M.set_task_command = function(cmd)
@@ -332,6 +298,8 @@ M.run_task = function(one_off_command)
   if cmd == nil then
     return
   end
+  M._state.last_command = cmd
+  M._state.last_command_was_one_off = one_off_command ~= nil
 
   M._state.running = true
   if M._settings.notifications.task_started then
@@ -444,6 +412,25 @@ M.run = function(one_off_command)
   else
     M.run_task()
   end
+end
+
+M.current_status = function()
+  local state = M._state
+  local never_run = state.last_exit_code == nil and state.running == false
+
+  if never_run then
+    return "NEVER_RUN"
+  end
+
+  if state.running then
+    return "IN_PROGRESS"
+  end
+
+  if state.last_exit_code == 0 then
+    return "PASSED"
+  end
+
+  return "FAILED"
 end
 
 return M
