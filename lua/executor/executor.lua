@@ -95,6 +95,10 @@ M.trigger_set_command_input = function(initial_input_value, callback_fn)
     prompt = "[Executor.nvim] enter a command to run: ",
     default = initial_input_value or "",
   }, function(choice)
+    if choice == nil or #choice == 0 then
+      return
+    end
+
     if M._state.in_one_off_mode == false then
       M.set_task_command(choice)
     end
@@ -190,12 +194,22 @@ M._make_popup = function(title, lines)
     },
   })
 
+  M._popup:map("n", "q", function()
+    M._popup:unmount()
+    M._popup = nil
+    M._state.showing_detail = false
+  end, { noremap = true, silent = true })
+
   M._popup:mount()
   Output.write_data(M._stored_task_command, M._popup.bufnr, M._settings.output_filter, lines)
 
   -- Ensure if the user uses :q or similar to destroy it, that we tidy up.
   M._popup:on({ event.BufWinLeave }, function()
     vim.schedule(function()
+      if M._popup == nil then
+        -- If the user closed the popup, we don't need to do anything.
+        return
+      end
       M._popup:unmount()
       M._popup = nil
       M._state.showing_detail = false
